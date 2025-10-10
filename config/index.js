@@ -104,7 +104,7 @@ function log(...args) {
 	if (VERBOSE || log_settings.force) console.log(chalk.bold.blue(`[${new Date().toISOString()}] <${log_settings.prefix}>`), chalk_up(log_settings, ...args));
 }
 
-function error(...args) { w
+function error(...args) {
 	const log_settings = {
 		prefix: 'Error',
 		color: 'red',

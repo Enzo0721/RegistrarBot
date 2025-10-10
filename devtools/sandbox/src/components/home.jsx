@@ -1,5 +1,6 @@
 import React from 'react';
 import config from '#config';
+import QuestionForm from '../components/query.jsx';
 
 const links = [
 	{
@@ -17,12 +18,6 @@ async function health() {
 	return json;
 }
 
-async function testroute() {
-	const res = await fetch(config.API_URL+'/api/v1/test/ping');
-	const text = await res.text();
-	console.log(text);
-	return text;
-}
 
 export default function HomePage() {
 	return (
@@ -33,7 +28,7 @@ export default function HomePage() {
 				</div>
 			</header>
 			<button onClick={health}>test server health</button>
-			<button onClick={testroute}>test route</button>
+<QuestionForm />
 			<section className="py-20 text-center">
 				<h2 className="text-4xl font-bold mb-4">
 					Welcome to the Registrar Bot Sandbox 
