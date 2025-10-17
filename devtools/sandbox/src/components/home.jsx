@@ -10,16 +10,30 @@ const links = [
 	}
 ];
 
-// pings health on the backend
-async function health() {
-	const res = await fetch(config.API_URL+'/health');
-	const json = await res.json();
-	console.log(json);
-	return json;
-}
-
-
 export default function HomePage() {
+	// pings health on the backend
+	const health = async () => {
+		try {
+			console.log('Testing server health...');
+			console.log('API_URL:', config.API_URL);
+			console.log('Full URL:', config.API_URL + '/health');
+			
+			const res = await fetch(config.API_URL + '/health');
+			console.log('Response status:', res.status);
+			
+			if (!res.ok) {
+				throw new Error(`HTTP error! status: ${res.status}`);
+			}
+			
+			const json = await res.json();
+			console.log('Health check response:', json);
+			return json;
+		} catch (error) {
+			console.error('Health check failed:', error);
+			alert('Health check failed: ' + error.message);
+		}
+	};
+
 	return (
 		<div className="min-h-screen bg-gray-900 text-gray-100 antialiased">
 			<header className="bg-gray-900 border-b border-gray-800">
@@ -27,7 +41,14 @@ export default function HomePage() {
 					<h1 className="text-xl font-semibold">Registrar Bot</h1>
 				</div>
 			</header>
-			<button onClick={health}>test server health</button>
+			<div className="p-4">
+				<button 
+					onClick={health}
+					className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+				>
+					test server health
+				</button>
+			</div>
 <QuestionForm />
 			<section className="py-20 text-center">
 				<h2 className="text-4xl font-bold mb-4">

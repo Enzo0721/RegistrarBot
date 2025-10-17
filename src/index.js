@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'node:http';
 import cors from 'cors';
 import { Server } from 'socket.io';
-import socketHandler from './src/socket.js';
+import socketHandler from './socket/chatroom.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import config from '#config'
@@ -20,7 +20,7 @@ class Main {
 		this.server = http.createServer(this.app);
 		this.io = new Server(this.server, {
 			cors: {
-				origin: config.SOCKET_ORIGIN,
+				origin: "*",  // Allow all origins for development
 				credentials: true
 			}
 		});
@@ -46,15 +46,8 @@ class Main {
 		});
 	}
 	addIO() {
-		this.io.use((socket, next) => {
-			const origin = socket.handshake.headers.origin;
-
-			if (origin !== config.SOCKET_ORIGIN) {								// SOCKET_ORIGIN is our site
-				config.log('socket connection refused');
-				return next(new Error('Forbidden origin'));				// aborts the handshake
-			}
-			return next();												// allow the connection
-		});
+		// Initialize socket handlers
+		socketHandler(this.io);
 	}
 	start() {
 		this.server.listen(config.SERVER_PORT, () => {
