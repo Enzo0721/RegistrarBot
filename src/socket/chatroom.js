@@ -1,28 +1,26 @@
+import "#config";
+
 export default (io) => {
   io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    config.log("A user connected:", socket.id);
 
-    // Join a specific chat room
-    socket.on("joinRoom", (roomId) => {
+    socket.on("join_room", (roomId) => {
       socket.join(roomId);
-      console.log(`Socket ${socket.id} joined room ${roomId}`);
-      io.to(roomId).emit("userJoined", socket.id);
+      config.log(`Socket ${socket.id} joined room ${roomId}`);
+      io.to(roomId).emit("user_joined", socket.id);
     });
 
-    // Handle incoming chat messages
-    socket.on("chatMessage", ({ roomId, message, user }) => {
-      io.to(roomId).emit("chatMessage", {
+    socket.on("chat_message", ({ roomId, message, user }) => {
+      io.to(roomId).emit("chat_message", {
         user,
         message,
         timestamp: new Date(),
       });
     });
 
-    // Handle user disconnects
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
-      io.emit("userLeft", socket.id);
+      config.log("User disconnected:", socket.id);
+      io.emit("user_disconnected", socket.id);
     });
   });
 };
-
