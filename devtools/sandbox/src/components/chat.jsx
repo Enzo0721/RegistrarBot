@@ -5,7 +5,7 @@ const socket = io("http://localhost:5000"); // backend
 
 export default function ChatRoom() {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [roomId, setRoomId] = useState('');
   const [user, setUser] = useState('');
   const [status, setStatus] = useState('waiting');
@@ -36,7 +36,7 @@ export default function ChatRoom() {
       socket.off("user_disconnected");
       socket.disconnect();
     };
-  }, [roomId]);
+  }, []);
 
   // send message
   const sendMessage = () => {
@@ -104,4 +104,3 @@ export default function ChatRoom() {
 	  </div>
   );
 }
-
