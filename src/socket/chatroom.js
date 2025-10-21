@@ -1,4 +1,4 @@
-import "#config";
+import config from "#config";
 
 export default (io) => {
   io.on("connection", (socket) => {

@@ -11,7 +11,8 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "next": "^14.2.33",
-    "react": "^18"
+    "react": "^18",
+    "socket.io-client": "^4.8.1"
   },
   "imports": {
     "#config": "./config/index.js"
