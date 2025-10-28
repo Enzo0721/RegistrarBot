@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
+import config from "#config";
 
-const socket = io("http://localhost:5000"); // backend
+const socket = io(config.API_URL); // backend
 
 export default function ChatRoom() {
   const [messages, setMessages] = useState([]);
@@ -9,6 +10,7 @@ export default function ChatRoom() {
   const [roomId, setRoomId] = useState('');
   const [user, setUser] = useState('');
   const [status, setStatus] = useState('waiting');
+  const [error, setError] = useState('');
 
   // connect and join room
   useEffect(() => {
@@ -16,24 +18,30 @@ export default function ChatRoom() {
       setMessages((prev) => [...prev, msg]);
     });
 
-    socket.on("user_joined", (userId) => {
+    socket.on("user_joined", (userId, userCount) => {
       setMessages((prev) => [
         ...prev,
-        { system: true, message: `User ${userId} joined` },
+        { system: true, message: `User ${userId} joined with ${userCount} in room` },
       ]);
     });
 
-    socket.on("user_disconnected", (userId) => {
+    socket.on("user_disconnected", (userId, userCount) => {
       setMessages((prev) => [
         ...prev,
-        { system: true, message: `User ${userId} disconnected` },
+        { system: true, message: `User ${userId} disconnected with ${userCount} in room` },
       ]);
+    });
+
+    socket.on("room_full", (roomId) => {
+      	setStatus('waiting');
+		setError(`room ${roomId} full`);
     });
 
     return () => {
       socket.off("chat_message");
       socket.off("user_joined");
       socket.off("user_disconnected");
+	  socket.off("room_full");
       socket.disconnect();
     };
   }, []);
@@ -41,20 +49,22 @@ export default function ChatRoom() {
   // send message
   const sendMessage = () => {
     if (!input.trim()) return;
-    socket.emit("chat_message", { roomId, message: input, user });
+    socket.emit("chat_message", { message: input });
     setInput("");
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 	setStatus('submitted');
-    socket.emit("join_room", roomId);
+	setError('');
+    socket.emit("join_room", roomId, user);
   };
 
   return (
 	  <div>
 {status == 'waiting' ? 
 	<div>
+		<div>{error}</div>
 		<form onSubmit={handleSubmit} className="p-4 flex flex-col gap-2 max-w-sm">
 		  <input
 			type="text"
