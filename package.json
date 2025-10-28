@@ -1,21 +1,20 @@
 {
-  "name": "registrarbot-sandbox",
+  "name": "registrarbot",
   "version": "1.0.0",
-  "private": true,
+  "description": "A bot for RPI registration.",
+  "main": "index.js",
   "scripts": {
-    "dev": "node src/index.js"
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma": "dotenv -- npx prisma"
   },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "chalk": "^5.6.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "socket.io": "^4.8.1",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "@prisma/client": "^5.15.1"
   },
-  "imports": {
-    "#config": "./config/index.js"
-  },
-  "type": "module"
+  "devDependencies": {
+    "dotenv-cli": "^7.4.2",
+    "prisma": "^5.15.1"
+  }
 }

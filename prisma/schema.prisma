@@ -1,0 +1,15 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // This now correctly points to your Docker DB
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Your models (User, Post, etc.) go here
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
