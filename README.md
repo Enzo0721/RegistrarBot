@@ -13,7 +13,17 @@ A modern RPI Registrar chatbot built with Express.js, Socket.io, and Next.js. Pr
 ## 📝 Development Status & Tasks
 
 <!-- MONDAY_BOARD_START -->
-This table is automatically updated by Github Actions.
+| Task | Status |
+|---|---|
+| Environment | Working on it |
+| Security Protocols | Not Started |
+| LLM | Stuck |
+| Database | Working on it |
+| Dashboard | Not Started |
+| Chatroom | Working on it |
+| Multilingual | Not Started |
+| Documentation & Git | Working on it |
+
 <!-- MONDAY_BOARD_END -->
 
 ## 📁 Project Structure
