@@ -40,6 +40,7 @@ class Main {
 		);
 		this.app.use('/api/v1/test', new Test(this.io));
 		this.app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(this.specs));
+
 		// Catch all missing routes, send 404
 		this.app.use((_, res) => {
 			res.sendStatus(404);
