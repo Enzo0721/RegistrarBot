@@ -10,6 +10,12 @@ A modern RPI Registrar chatbot built with Express.js, Socket.io, and Next.js. Pr
 - **Socket.io Based Chat** - Socket.io powered chat rooms
 - **Web Interface** - Modern Next.js frontend with Tailwind CSS
 
+## 📝 Development Status & Tasks
+
+<!-- MONDAY_BOARD_START -->
+This table is automatically updated by Github Actions.
+<!-- MONDAY_BOARD_END -->
+
 ## 📁 Project Structure
 
 ```
