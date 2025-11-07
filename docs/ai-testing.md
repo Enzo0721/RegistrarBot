@@ -1,4 +1,5 @@
-# AI Model Testing / Mid-Semester Proof of Work
+# AI Model Testing / Mid-Semester Proof of Work  
+
 Documented_by: Zaid Siddiqui
 Models_Tested:
   - GPT-4 (ChatGPT)
