@@ -1,6 +1,7 @@
 # AI Model Testing / Mid-Semester Proof of Work  
 
 Documented_by: Zaid Siddiqui
+
 Models_Tested:
   - GPT-4 (ChatGPT)
   - Ollama (local)
@@ -8,39 +9,52 @@ Models_Tested:
   - Google Gemini
 
 Quick_Setup:
+
   Clone_Install:
     git clone https://github.com/Enzo0721/RegistrarBot.git
     cd RegistrarBot
     npm install
     cd devtools/sandbox && npm install && cd ../..
+
   Environment_Backend:
     SERVER_ADDRESS=localhost
     SERVER_PORT=3001
     SOCKET_ORIGIN=*
     VERBOSE=true
+
   Environment_Frontend:
     NEXT_PUBLIC_API_URL=http://localhost:3001
+
   Install_Ollama:
     curl -fsSL https://ollama.ai/install.sh | sh
     ollama run qwen3
+
 Running_Project:
+
   Start_Ollama: ollama run qwen3
+
   Backend:
     npm run dev
     # Available at http://localhost:3001
+
   Frontend:
     cd devtools/sandbox
     npm run dev
     # Available at http://localhost:3000
+
 API_Endpoints:
   - GET /health - Health check
   - POST /api/v1/test/ask - Chat with bot
   - GET /api/docs - Swagger documentation
+
 Socket_Events:
   - joinRoom - Join chat room
   - chatMessage - Send/receive messages
   - userJoined/userLeft - User notifications
+
+
 Prompts_Used:
+
 "Provide a link to the RPI academic calendar for Fall 2025."
 
 "What are the final exam dates for the current semester?"
