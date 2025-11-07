@@ -5,28 +5,29 @@ Models_Tested:
   - Ollama (local)
   - LLaMA (local)
   - Google Gemini
+
 Quick_Setup:
-  Clone_Install: |
+  Clone_Install:
     git clone https://github.com/Enzo0721/RegistrarBot.git
     cd RegistrarBot
     npm install
     cd devtools/sandbox && npm install && cd ../..
-  Environment_Backend: |
+  Environment_Backend:
     SERVER_ADDRESS=localhost
     SERVER_PORT=3001
     SOCKET_ORIGIN=*
     VERBOSE=true
-  Environment_Frontend: |
+  Environment_Frontend:
     NEXT_PUBLIC_API_URL=http://localhost:3001
-  Install_Ollama: |
+  Install_Ollama:
     curl -fsSL https://ollama.ai/install.sh | sh
     ollama run qwen3
 Running_Project:
   Start_Ollama: ollama run qwen3
-  Backend: |
+  Backend:
     npm run dev
     # Available at http://localhost:3001
-  Frontend: |
+  Frontend:
     cd devtools/sandbox
     npm run dev
     # Available at http://localhost:3000
