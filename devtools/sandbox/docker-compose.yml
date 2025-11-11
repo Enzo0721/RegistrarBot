@@ -1,0 +1,25 @@
+﻿version: "3.8"
+
+services:
+  sandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    restart: always
+
+    ports:
+      - "3001:3001"
+
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./.next:/app/.next
+
+    environment:
+      - PORT=3001
+      - HOSTNAME=0.0.0.0
+
+networks:
+  default:
+    name: registrarbot_sandbox_network

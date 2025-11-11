@@ -81,6 +81,46 @@ ollama run qwen3
 
 ## 🚀 Running
 
+### Option 1: Docker (Recommended)
+
+**Main Application (Backend + Database):**
+```bash
+# From project root
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+**Services & Ports:**
+- **Port 3000**: RegistrarBot API Server (Express + Socket.IO)
+  - Health Check: http://localhost:3000/health
+  - API Docs (Swagger): http://localhost:3000/api/docs
+  - Chat API: http://localhost:3000/api/v1/test/ask
+- **Port 5432**: PostgreSQL Database
+  - Used internally by the app and Prisma
+  - Connection: `postgresql://myuser:mypassword@localhost:5432/registrarbot_db`
+
+**Sandbox (Frontend Development Tool):**
+```bash
+# From devtools/sandbox directory
+cd devtools/sandbox
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+```
+
+**Sandbox Ports:**
+- **Port 3001**: Next.js Development Server
+  - Web UI for testing the chatbot: http://localhost:3001
+  - Hot reload enabled for frontend development
+
+### Option 2: Local Development
+
 **Start Ollama model:**
 ```bash
 ollama run qwen3
@@ -111,8 +151,43 @@ npm run dev
 - `chatMessage` - Send/receive messages
 - `userJoined`/`userLeft` - User notifications
 
+## 🗄️ Database Management with Prisma Studio
+
+Prisma Studio is a visual database browser that lets you view and edit your database data through a web interface.
+
+**Starting Prisma Studio:**
+```bash
+# Local development (outside Docker)
+npx prisma studio
+
+# Access at: http://localhost:5555
+```
+
+**What Prisma Studio Does:**
+- 📊 **Browse Data**: View all tables and records in a visual interface
+- ✏️ **Edit Records**: Add, update, or delete database entries
+- 🔍 **Filter & Search**: Query your data with filters
+- 🔗 **Relations**: Navigate relationships between tables
+
+**Common Use Cases:**
+- Inspect data after API calls
+- Manually add test data
+- Debug database issues
+- Verify migrations worked correctly
+
+**Note**: Prisma Studio connects to your database using the `DATABASE_URL` in your `.env` file. Make sure your database is running (via Docker or locally) before starting Studio.
+
 ## 🐛 Troubleshooting
 
+### Docker Issues
+- **Docker daemon not running**: 
+  - Start Docker Desktop on Windows
+  - Enable WSL integration: Docker Desktop → Settings → Resources → WSL Integration
+  - Verify with: `docker ps`
+- **Database connection issues**: Check logs with `docker-compose logs db`
+- **Port conflicts**: Modify ports in `docker-compose.yml` if 3000, 3001, or 5432 are in use
+
+### Local Development Issues
 - **Port conflicts**: `npx kill-port 3001`
 - **Ollama issues**: Ensure `ollama run qwen3` is running
 - **Connection issues**: Check `.env` files and restart servers
