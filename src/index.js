@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 import socketHandler from './socket/chatroom.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import config from '#config'
+import '#config'
 
 // routes
 import { Test } from './routes/Test.js';

@@ -6,6 +6,9 @@ dotenv.config();
 const SERVER_ADDRESS = process.env.SERVER_ADDRESS;
 const SERVER_PORT = process.env.SERVER_PORT;
 const SOCKET_ORIGIN = process.env.SOCKET_ORIGIN;
+const LLM_PORT = process.env.LLM_PORT;
+const VERBOSE = process.env.VERBOSE;
+
 const OPTIONS = { // options for sever description in sqagger
 	definition: {
 		openapi: '3.1.0',
@@ -23,11 +26,21 @@ const OPTIONS = { // options for sever description in sqagger
 	},
 	apis: ['./routes/*.js']
 };
-const VERBOSE = process.env.VERBOSE === 'true'
+
+const env_reqs = { // sug == suggested, opt == optional, req == required
+	SERVER_ADDRESS: 'req',
+	SERVER_PORT: 'req',
+	SOCKET_ORIGIN: 'req',
+	LLM_PORT: 'req',
+	VERBOSE: 'sug'
+};
+
 if (VERBOSE)
 	console.log(chalk.bold.blue(`[${new Date().toISOString()}] <${OPTIONS.definition.info.title}>`), chalk.gray(`VERBOSE environment variable true. Verbose logging enabled.`));
 else if (!VERBOSE && process.env.VERBOSE !== 'false')
 	console.error(chalk.bold.red(`[${new Date().toISOString()}] <Error>`), chalk.gray(`VERBOSE environment variable unregcognized, setting false`));
+
+
 
 function parse_params(log_settings, str) {
 	const params = str.substring(2).split(';');
@@ -81,7 +94,7 @@ function chalk_up(log_settings, ...args) {
 
 // options
 //		prefix: 'text',					# text to be displayed after time
-//		color: 'color | '#hexdecimal',	# color of text after prefix (prefix color cannot be modified)
+//		color: 'color' | '#hexdecimal',	# color of text after prefix (prefix color cannot be modified)
 //		bg: 'color' | '#hexdecimal',	# text background color
 //		force,							# log regardless of verbose state
 //		bold,							# text is bold or not
@@ -125,11 +138,39 @@ function error_default(...args) {
 	console.error(...args);
 }
 
+function check_env_vars() {
+	var errors = [];
+	var warnings = [];
+	for (const env_var in env_reqs) {
+		switch(env_var[env_reqs]) {
+		case 'req':
+			if ( process.env[env_var] == '' || !process.env[env_var] )
+				errors.push(env_var);
+			break;
+		case 'sug':
+			if ( process.env[env_var] == '' || !process.env[env_var] )
+				warnings.push(env_var);
+		case 'opt':
+		default:
+		}
+	}
+	if (warnings.length !== 0) {
+		config.log('@@prefix=Warning;force=true;color=yellow', 'Following environment variables unset may cause unexpected behavior, suggested to be set',
+				warnings);
+	}
+	if (errors.length !== 0) {
+		config.error('Following environment variables required and unset please set them in your .env', errors);
+		throw new Error(`Required environment variables unset`);
+	}
+}
+
 export default {
 	// variables
 	SERVER_ADDRESS,
 	SERVER_PORT,
 	SOCKET_ORIGIN,
+	LLM_PORT,
+	LLM_MODEL,
 	VERBOSE,
 	OPTIONS,
 
@@ -137,5 +178,6 @@ export default {
 	log,
 	log_default,
 	error,
-	error_default
+	error_default,
+	check_env_vars
 }

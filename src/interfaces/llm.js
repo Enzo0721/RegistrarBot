@@ -1,10 +1,20 @@
 import '#config';
 
-class LLMInterface {
-	
+const PORT = config.LLM_PORT;
+const MODEL = config.LLM_MODEL;
 
-	constructor() {
+class LLM {
+	constructor() {	
+		this.chat_history = null;
+		this.security_prompt = 'hi whats up';
+	}
+
+	async function chat(message) {
+		const result = await fetch('', {
+			method: 'POST',
+			headers:
+		});
 	}
 }
 
-export { LLMInterface };
+export { LLM };
