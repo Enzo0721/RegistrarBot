@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
 import config from "#config";
-
-const socket = io(config.API_URL); // backend
 
 export default function ChatRoom() {
   const [messages, setMessages] = useState([]);
@@ -11,9 +8,14 @@ export default function ChatRoom() {
   const [user, setUser] = useState('');
   const [status, setStatus] = useState('waiting');
   const [error, setError] = useState('');
+  const [skt, setSocket] = useState(null);
+  const [llmgen, isGen] = useState(false);
 
   // connect and join room
   useEffect(() => {
+	const socket = config.getSocket();
+	  setSocket(socket);
+
     socket.on("chat_message", (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
@@ -23,6 +25,19 @@ export default function ChatRoom() {
         ...prev,
         { system: true, message: `User ${userId} joined with ${userCount} in room` },
       ]);
+    });
+
+    socket.on("llm_start", () => {
+	  isGen(true);
+      setMessages((prev) => [
+        ...prev,
+        { system: true, message: `LLM Generating response...` },
+      ]);
+    });
+ 
+    socket.on("llm_end", (msg) => {
+	  isGen(false);
+      setMessages((prev) => [...prev, msg]);
     });
 
     socket.on("user_disconnected", (userId, userCount) => {
@@ -48,8 +63,9 @@ export default function ChatRoom() {
 
   // send message
   const sendMessage = () => {
+	if (llmgen) return;	
     if (!input.trim()) return;
-    socket.emit("chat_message", { message: input });
+    skt.emit("chat_message", { message: input });
     setInput("");
   };
 
@@ -57,7 +73,7 @@ export default function ChatRoom() {
     e.preventDefault();
 	setStatus('submitted');
 	setError('');
-    socket.emit("join_room", roomId, user);
+    skt.emit("join_room", roomId, user);
   };
 
   return (

@@ -1,11 +1,12 @@
 import config from "#config";
+import { LLM } from '../interfaces/llm.js';
 
 export default (io) => {
 	const getCount = (roomId) =>
 		io.sockets.adapter.rooms.get(roomId)?.size ?? 0;
 
 	io.on("connection", (socket) => {
-		config.log("User connected:", socket.id);
+		config.log('Socket connected:', socket.id, '; Total connections:', io.of("/").sockets.size);
 		var room = null;
 		var username = 'unknown';
 
@@ -13,6 +14,7 @@ export default (io) => {
 			const numUsers = getCount(roomId);
 			room = roomId;
 			username = user;
+			const bot = new LLM;
 
 			if (numUsers >= 2) {
 				socket.emit("room_full", { room });
@@ -23,18 +25,22 @@ export default (io) => {
 			socket.join(room);
 			io.to(room).emit("user_joined", user, getCount());
 			config.log(`Socket ${socket.id} joined room ${room}`);
-			socket.on("chat_message", ({ message }) => {
+			socket.on("chat_message", async ({ message }) => {
 				io.to(room).emit("chat_message", {
 					user: username,
 					message,
 					timestamp: new Date(),
 				});
 				if (getCount(room) == 1) {
-					io.to(room).emit("chat_message", {
-						user: 'system',
-						message: 'auto message, will be llm',
+					io.to(room).emit("llm_start");
+					const res = await bot.chat(message, 'user', true);
+					io.to(room).emit("llm_end", {
+						user: 'ollama',
+						message: res.message.content,
 						timestamp: new Date(),
 					});
+				} else {
+					bot.chat(message, 'user');
 				}
 			});
 		});
@@ -42,7 +48,7 @@ export default (io) => {
 		socket.on("disconnect", () => {
 			if (room !== null)
 				io.to(room).emit("user_disconnected", username, getCount());
-			config.log("User disconnected:", socket.id);
+			config.log('Socket disconnected:', socket.id, '; Total connections:', io.of("/").sockets.size);
 		});
 	});
 };

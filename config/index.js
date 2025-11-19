@@ -2,45 +2,14 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 dotenv.config();
 
-
-const SERVER_ADDRESS = process.env.SERVER_ADDRESS;
-const SERVER_PORT = process.env.SERVER_PORT;
-const SOCKET_ORIGIN = process.env.SOCKET_ORIGIN;
-const LLM_PORT = process.env.LLM_PORT;
-const VERBOSE = process.env.VERBOSE;
-
-const OPTIONS = { // options for sever description in sqagger
-	definition: {
-		openapi: '3.1.0',
-		info: {
-			title: 'Registrar Bot',
-			version: 'v1.0.0',
-			description:
-				'REST and Socket.io application made with Express and documented with Swagger'
-		},
-		servers: [
-			{
-				url: `${SERVER_ADDRESS}:${SERVER_PORT}`
-			}
-		]
-	},
-	apis: ['./routes/*.js']
-};
-
 const env_reqs = { // sug == suggested, opt == optional, req == required
-	SERVER_ADDRESS: 'req',
-	SERVER_PORT: 'req',
-	SOCKET_ORIGIN: 'req',
-	LLM_PORT: 'req',
-	VERBOSE: 'sug'
+	SERVER_ADDRESS: {type: 'req'},
+	SERVER_PORT: {type: 'req'},
+	SOCKET_ORIGIN: {type: 'req'},
+	LLM_PORT: {type: 'sug'},
+	LLM_MODEL: {type: 'sug', default: 'qwen3'},
+	VERBOSE: {type: 'opt', default: false}
 };
-
-if (VERBOSE)
-	console.log(chalk.bold.blue(`[${new Date().toISOString()}] <${OPTIONS.definition.info.title}>`), chalk.gray(`VERBOSE environment variable true. Verbose logging enabled.`));
-else if (!VERBOSE && process.env.VERBOSE !== 'false')
-	console.error(chalk.bold.red(`[${new Date().toISOString()}] <Error>`), chalk.gray(`VERBOSE environment variable unregcognized, setting false`));
-
-
 
 function parse_params(log_settings, str) {
 	const params = str.substring(2).split(';');
@@ -105,68 +74,177 @@ function chalk_up(log_settings, ...args) {
 //		inverse,						# text is inverse ? or not
 //		strikethrough					# text is strikethrough or not
 function log(...args) {
+	const theme = THEME.STD;
 	const log_settings = {
-		prefix: OPTIONS.definition.info.title,
-		color: 'gray',
-	}
+		prefix: theme.prefix,
+		color: theme.message_style.color
+	};
 	if (typeof args[0] === 'string' && args[0].startsWith('@@')) {
 		parse_params(log_settings, args[0]);
-		args.shift();	
-	} else {
+		args.shift();
+		if (ENV.VERBOSE || log_settings.force) console.log(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${log_settings.prefix}>`),
+				chalk_up(log_settings, ...args));
+		return;
 	}
-	if (VERBOSE || log_settings.force) console.log(chalk.bold.blue(`[${new Date().toISOString()}] <${log_settings.prefix}>`), chalk_up(log_settings, ...args));
+	if (ENV.VERBOSE) console.log(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${log_settings.prefix}>`),
+			chalk_up(theme.message_style, ...args));
+}
+
+function warn(...args) {
+	const theme = THEME.WARN;
+	const log_settings = {
+		prefix: theme.prefix,
+		color: theme.message_style.color
+	};
+	if (typeof args[0] === 'string' && args[0].startsWith('@@')) {
+		parse_params(log_settings, args[0]);
+		args.shift();
+		if (ENV.VERBOSE || log_settings.force) console.warn(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${log_settings.prefix}>`),
+				chalk_up(log_settings, ...args));
+		return;
+	}
+	if (ENV.VERBOSE) console.warn(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${theme.prefix}>`),
+			chalk_up(theme.message_style, ...args));
 }
 
 function error(...args) {
+	const theme = THEME.ERR;
 	const log_settings = {
-		prefix: 'Error',
-		color: 'red',
-	}
+		prefix: theme.prefix,
+		color: theme.message_style.color
+	};
 	if (typeof args[0] === 'string' && args[0].startsWith('@@')) {
 		parse_params(log_settings, args[0]);
-		args.shift();	
-	} else {
+		args.shift();
+		console.error(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${log_settings.prefix}>`),
+				chalk_up(log_settings, ...args));
+		return
 	}
-	if (VERBOSE || log_settings.force) console.error(chalk.bold.red(`[${new Date().toISOString()}] <${log_settings.prefix}>`), chalk_up(log_settings, ...args));
+	console.error(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${theme.prefix}>`),
+			chalk_up(theme.message_style, ...args));
 }
 
 function log_default(...args) {
 	console.log(...args);
 }
 
+function warn_default(...args) {
+	console.warn(...args);
+}
+
 function error_default(...args) {
 	console.error(...args);
 }
+
+const ENV = {};
 
 function check_env_vars() {
 	var errors = [];
 	var warnings = [];
 	for (const env_var in env_reqs) {
-		switch(env_var[env_reqs]) {
+		switch(env_reqs[env_var].type) {
 		case 'req':
-			if ( process.env[env_var] == '' || !process.env[env_var] )
+			if ( process.env[env_var] == '' || !process.env[env_var] ) {
 				errors.push(env_var);
-			break;
+				break;
+			} else {
+				ENV[env_var] = process.env[env_var];
+			}
 		case 'sug':
-			if ( process.env[env_var] == '' || !process.env[env_var] )
-				warnings.push(env_var);
+			if ( process.env[env_var] == '' || !process.env[env_var] ) {
+				let val = env_reqs[env_var].default;
+				warnings.push(`${env_var}:${val}`);
+				ENV[env_var] = env_reqs[env_var].default;
+			} else {
+				ENV[env_var] = process.env[env_var];
+			}
 		case 'opt':
 		default:
+			if ( process.env[env_var] == '' || !process.env[env_var] ) {
+				ENV[env_var] = env_reqs[env_var].default;
+			} else {
+				ENV[env_var] = process.env[env_var];
+			}
 		}
 	}
 	if (warnings.length !== 0) {
-		config.log('@@prefix=Warning;force=true;color=yellow', 'Following environment variables unset may cause unexpected behavior, suggested to be set',
+		warn('@@force', 'Following environment variables unset may cause unexpected behavior, suggested to be set',
 				warnings);
 	}
 	if (errors.length !== 0) {
-		config.error('Following environment variables required and unset please set them in your .env', errors);
+		error('Following environment variables required and unset please set them in your .env',
+				errors);
 		throw new Error(`Required environment variables unset`);
 	}
 }
 
+const OPTIONS = { // options for sever description in sqagger
+	definition: {
+		openapi: '3.1.0',
+		info: {
+			title: 'Registrar Bot',
+			version: 'v1.0.0',
+			description:
+				'REST and Socket.io application made with Express and documented with Swagger'
+		},
+		servers: [
+			{
+				url: `${ENV.SERVER_ADDRESS}:${ENV.SERVER_PORT}`
+			}
+		]
+	},
+	apis: ['./routes/*.js']
+};
+
+const THEME = {
+	STD: {
+		prefix: 'Registrar Bot',
+		prefix_style: {
+			bold: true,
+			color: 'blue'
+		},
+		message_style: {
+			color: 'gray',
+		}
+	},
+	WARN: {
+		prefix: 'Warning',
+		prefix_style: {
+			bold: true,
+			color: 'yellow'
+		},
+		message_style: {
+			color: 'yellow',
+		}
+	},
+	ERR: {
+		prefix: 'Error',
+		prefix_style: {
+			bold: true,
+			color: 'red'
+		},
+		message_style: {
+			color: 'red',
+		}
+	}
+};
+
 export default {
-	// variables
-	SERVER_ADDRESS,
+	// vars
+	ENV,
+	OPTIONS,
+
+	// functions
+	log,
+	log_default,
+	warn,
+	warn_default,
+	error,
+	error_default,
+	check_env_vars
+
+	// variables DEPRECATED
+/*	SERVER_ADDRESS,
 	SERVER_PORT,
 	SOCKET_ORIGIN,
 	LLM_PORT,
@@ -179,5 +257,5 @@ export default {
 	log_default,
 	error,
 	error_default,
-	check_env_vars
+	check_env_vars*/
 }

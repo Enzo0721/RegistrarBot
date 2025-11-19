@@ -5,14 +5,15 @@ import { Server } from 'socket.io';
 import socketHandler from './socket/chatroom.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import '#config'
+import config from '#config'
 
 // routes
 import { Test } from './routes/Test.js';
 
 class Main {
 	constructor() {
-		config.log('@@force', `server starting, version: ${config.OPTIONS.definition.info.version} on address ${config.SERVER_ADDRESS}:${config.SERVER_PORT}`);
+		config.check_env_vars();
+		config.log('@@force', `server starting, version: ${config.OPTIONS.definition.info.version} on address ${config.ENV.SERVER_ADDRESS}:${config.ENV.SERVER_PORT}`);
 		this.app = express();
 		this.app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 		this.app.use(express.json());
@@ -20,7 +21,7 @@ class Main {
 		this.server = http.createServer(this.app);
 		this.io = new Server(this.server, {
 			cors: {
-				origin: "*",  // Allow all origins for development
+				origin: config.ENV.SOCKET_ORIGIN,  // Allow all origins for development
 				credentials: true
 			}
 		});
@@ -51,8 +52,8 @@ class Main {
 		socketHandler(this.io);
 	}
 	start() {
-		this.server.listen(config.SERVER_PORT, () => {
-			config.log('@@force;color=green', `server listening on ${config.SERVER_ADDRESS}:${config.SERVER_PORT}`);
+		this.server.listen(config.ENV.SERVER_PORT, () => {
+			config.log('@@force;color=green', `server listening on ${config.ENV.SERVER_ADDRESS}:${config.ENV.SERVER_PORT}`);
 		});
 	}
 }
