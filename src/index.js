@@ -9,6 +9,7 @@ import config from '#config'
 
 // routes
 import { Test } from './routes/Test.js';
+import { ChatHistory } from './routes/ChatHistory.js';
 
 class Main {
 	constructor() {
@@ -40,6 +41,7 @@ class Main {
 			timestamp: new Date().toISOString()})
 		);
 		this.app.use('/api/v1/test', new Test(this.io));
+		this.app.use('/api/v1/chat', new ChatHistory(this.io));
 		this.app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(this.specs));
 
 		// Catch all missing routes, send 404

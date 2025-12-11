@@ -9,7 +9,23 @@ generator client {
 
 // Your models (User, Post, etc.) go here
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id          Int          @id @default(autoincrement())
+  email       String?      @unique
+  name        String?
+  username    String       @unique
+  lastOnline  DateTime     @default(now()) @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  messages    ChatMessage[]
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  role      String   // 'system', 'user', 'assistant'
+  content   String   @db.Text
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
 }
