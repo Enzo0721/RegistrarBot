@@ -9,11 +9,14 @@ devtools/sandbox/node_modules/*
 
 /src/generated/prisma
 
-# Enroot / runtime artifacts
+## Enroot / runtime artifacts (ignore large/generated files only)
+# Keep enroot scripts and config files tracked (deploy-enroot.sh, run-enroot.sh, enroot.conf, ENROOT.md)
 enroot-images/
-enroot-config.env
 registrarbot-data/
 *.sqsh
 *.tar
 *.log
+
+# Optional editor/IDE directories
 /.vscode/
+/.idea/
