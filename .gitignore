@@ -8,3 +8,12 @@ devtools/sandbox/package-lock.json
 devtools/sandbox/node_modules/*
 
 /src/generated/prisma
+
+# Enroot / runtime artifacts
+enroot-images/
+enroot-config.env
+registrarbot-data/
+*.sqsh
+*.tar
+*.log
+/.vscode/
