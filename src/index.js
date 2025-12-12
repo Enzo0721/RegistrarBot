@@ -8,11 +8,11 @@ import swaggerUi from 'swagger-ui-express';
 import config from '#config'
 
 // routes
-import { Test } from './routes/Test.js';
 import { ChatHistory } from './routes/ChatHistory.js';
 
 // utils
 import { requestLogger } from './utils/requestLogger.js';
+import { errorHandler, notFoundHandler } from './utils/errors.js';
 
 class Main {
 	constructor() {
@@ -47,14 +47,14 @@ class Main {
 			uptime: process.uptime(),
 			timestamp: new Date().toISOString()})
 		);
-		this.app.use('/api/v1/test', new Test(this.io));
 		this.app.use('/api/v1/chat', new ChatHistory(this.io));
 		this.app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(this.specs));
 
-		// Catch all missing routes, send 404
-		this.app.use((_, res) => {
-			res.sendStatus(404);
-		});
+		// 404 handler for unmatched routes (must be before error handler)
+		this.app.use(notFoundHandler);
+		
+		// Error handling middleware (must be last)
+		this.app.use(errorHandler);
 	}
 	addIO() {
 		// Initialize socket handlers
