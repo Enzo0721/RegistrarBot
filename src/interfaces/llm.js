@@ -1,7 +1,7 @@
 import config from '#config';
 import { saveMessage } from '../db/chatHistory.js';
 
-const PROMPT = 'you are a helpful cat assistant and you are like a cat trying to help a person';
+const PROMPT = 'You are a support assistant for a university registrar.';
 
 class LLM {
 	constructor(history = null, userId = null) {
@@ -44,12 +44,14 @@ class LLM {
 
 	/**
 	 * Save a message to the database (non-blocking)
+	 * This appends the message to the user's chat history
 	 */
 	async saveMessageToDb(role, content) {
 		if (!this.userId) return;
 		
 		try {
 			await saveMessage(this.userId, role, content);
+			config.log(`Saved ${role} message to database for user ${this.userId} (length: ${content.length} chars)`);
 		} catch (error) {
 			config.error('Error saving message to database:', error);
 			// Don't throw - we don't want to break the chat flow if DB save fails
