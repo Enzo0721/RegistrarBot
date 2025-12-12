@@ -8,10 +8,10 @@ export default (io) => {
 
 	io.on("connection", (socket) => {
 		config.log('Socket connected:', socket.id, '; Total connections:', io.of("/").sockets.size);
-		var room = null;
-		var username = 'unknown';
-		var userId = null;
-		var bot = null;
+		let room = null;
+		let username = 'unknown';
+		let userId = null;
+		let bot = null;
 
 		socket.on("join_room", async (roomId, user) => {
 			const numUsers = getCount(roomId);
@@ -59,7 +59,7 @@ export default (io) => {
 					message,
 					timestamp: new Date(),
 				});
-				if (getCount(room) == 1) {
+				if (getCount(room) === 1) {
 					io.to(room).emit("llm_start");
 					try {
 						const res = await bot.chat(message, 'user', true);

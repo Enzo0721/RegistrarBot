@@ -5,32 +5,58 @@ const router = express.Router();
 class Test {
 	async chatbot(message) {
 		config.log('asking chatbot ' + message);
-		const response = await fetch("http://localhost:11434/api/chat", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-			  model: "qwen3",  // change to your model name
-			  messages: [{ role: "user", content: message }],
-			})
-		});
+		const llmPort = config.ENV.LLM_PORT || '11434';
+		const llmModel = config.ENV.LLM_MODEL || 'qwen3';
+		
+		let response;
+		try {
+			response = await fetch(`http://localhost:${llmPort}/api/chat`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+				  model: llmModel,
+				  messages: [{ role: "user", content: message }],
+				})
+			});
+		} catch (error) {
+			config.error('Failed to connect to LLM service:', error);
+			throw new Error(`Failed to connect to LLM service at localhost:${llmPort}`);
+		}
+
+		if (!response.ok) {
+			const errorText = await response.text().catch(() => 'Unknown error');
+			config.error(`LLM service returned error: ${response.status} ${response.statusText} - ${errorText}`);
+			throw new Error(`LLM service error: ${response.status} ${response.statusText}`);
+		}
+
 		const reader = response.body.getReader();
 		const decoder = new TextDecoder("utf-8");
 		let fullResponse = "";
 
-		while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		const chunk = decoder.decode(value, { stream: true });
+		try {
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				const chunk = decoder.decode(value, { stream: true });
 
-		// Each chunk may contain one or more lines of JSON
-		for (const line of chunk.split("\n")) {
-				if (line.trim()) {
-					const data = JSON.parse(line);
-						if (data.message?.content) {
-							fullResponse += data.message.content;
+				// Each chunk may contain one or more lines of JSON
+				for (const line of chunk.split("\n")) {
+					if (line.trim()) {
+						try {
+							const data = JSON.parse(line);
+							if (data.message?.content) {
+								fullResponse += data.message.content;
+							}
+						} catch (parseError) {
+							// Skip invalid JSON lines (might be partial chunks)
+							config.warn('Failed to parse JSON line from LLM response:', line.substring(0, 100));
+						}
 					}
 				}
 			}
+		} catch (streamError) {
+			config.error('Error reading LLM response stream:', streamError);
+			throw new Error('Failed to read LLM response stream');
 		}
 
 		config.log('Chatbot full response: ' + fullResponse);

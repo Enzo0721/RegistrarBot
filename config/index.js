@@ -6,7 +6,7 @@ const env_reqs = { // sug == suggested, opt == optional, req == required
 	SERVER_ADDRESS: {type: 'req'},
 	SERVER_PORT: {type: 'req'},
 	SOCKET_ORIGIN: {type: 'req'},
-	LLM_PORT: {type: 'sug'},
+	LLM_PORT: {type: 'sug', default: '11434'},
 	LLM_MODEL: {type: 'sug', default: 'qwen3'},
 	VERBOSE: {type: 'opt', default: false}
 };
@@ -118,7 +118,7 @@ function error(...args) {
 		args.shift();
 		console.error(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${log_settings.prefix}>`),
 				chalk_up(log_settings, ...args));
-		return
+		return;
 	}
 	console.error(chalk_up(theme.prefix_style, `[${new Date().toISOString()}] <${theme.prefix}>`),
 			chalk_up(theme.message_style, ...args));
@@ -150,6 +150,7 @@ function check_env_vars() {
 			} else {
 				ENV[env_var] = process.env[env_var];
 			}
+			break;
 		case 'sug':
 			if ( process.env[env_var] == '' || !process.env[env_var] ) {
 				let val = env_reqs[env_var].default;
@@ -158,6 +159,7 @@ function check_env_vars() {
 			} else {
 				ENV[env_var] = process.env[env_var];
 			}
+			break;
 		case 'opt':
 		default:
 			if ( process.env[env_var] == '' || !process.env[env_var] ) {
@@ -165,6 +167,7 @@ function check_env_vars() {
 			} else {
 				ENV[env_var] = process.env[env_var];
 			}
+			break;
 		}
 	}
 	if (warnings.length !== 0) {
@@ -178,23 +181,26 @@ function check_env_vars() {
 	}
 }
 
-const OPTIONS = { // options for sever description in sqagger
-	definition: {
-		openapi: '3.1.0',
-		info: {
-			title: 'Registrar Bot',
-			version: 'v1.0.0',
-			description:
-				'REST and Socket.io application made with Express and documented with Swagger'
+// OPTIONS is a function to ensure ENV is populated before use
+function getOptions() {
+	return {
+		definition: {
+			openapi: '3.1.0',
+			info: {
+				title: 'Registrar Bot',
+				version: 'v1.0.0',
+				description:
+					'REST and Socket.io application made with Express and documented with Swagger'
+			},
+			servers: [
+				{
+					url: `${ENV.SERVER_ADDRESS}:${ENV.SERVER_PORT}`
+				}
+			]
 		},
-		servers: [
-			{
-				url: `${ENV.SERVER_ADDRESS}:${ENV.SERVER_PORT}`
-			}
-		]
-	},
-	apis: ['./routes/*.js']
-};
+		apis: ['./routes/*.js']
+	};
+}
 
 const THEME = {
 	STD: {
@@ -232,7 +238,9 @@ const THEME = {
 export default {
 	// vars
 	ENV,
-	OPTIONS,
+	get OPTIONS() {
+		return getOptions();
+	},
 
 	// functions
 	log,

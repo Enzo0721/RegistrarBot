@@ -6,7 +6,7 @@ const PROMPT = 'You are a support assistant for a university registrar.';
 class LLM {
 	constructor(history = null, userId = null) {
 		this.userId = userId; // User ID for saving to database
-		if (history == null || history.length === 0) {
+		if (history === null || history.length === 0) {
 			// New conversation - start with system prompt
 			this.history = [{
 				role: 'system',
@@ -38,7 +38,7 @@ class LLM {
 		}
 	}
 
-	history() {
+	getHistory() {
 		return this.history;
 	}
 
@@ -72,12 +72,14 @@ class LLM {
 			});
 		}
 
-		if (llm && role == 'user') {
-			const response = await fetch(`http://${config.ENV.SERVER_ADDRESS}:${config.ENV.LLM_PORT}/api/chat`, {
+		if (llm && role === 'user') {
+			const llmPort = config.ENV.LLM_PORT || '11434';
+			const llmModel = config.ENV.LLM_MODEL || 'qwen3';
+			const response = await fetch(`http://localhost:${llmPort}/api/chat`, {
 				method: 'POST',
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					model: config.ENV.LLM_MODEL,
+					model: llmModel,
 					messages: this.history,
 					stream: false
 				})
