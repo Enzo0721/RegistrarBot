@@ -11,6 +11,9 @@ import config from '#config'
 import { Test } from './routes/Test.js';
 import { ChatHistory } from './routes/ChatHistory.js';
 
+// utils
+import { requestLogger } from './utils/requestLogger.js';
+
 class Main {
 	constructor() {
 		config.check_env_vars();
@@ -18,6 +21,10 @@ class Main {
 		this.app = express();
 		this.app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 		this.app.use(express.json());
+		
+		// Request logging middleware (logs all API requests)
+		this.app.use(requestLogger);
+		
 		this.specs = swaggerJsdoc(config.OPTIONS);
 		this.server = http.createServer(this.app);
 		this.io = new Server(this.server, {

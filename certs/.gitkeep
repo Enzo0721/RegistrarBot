@@ -1,0 +1,11 @@
+# This directory stores SSL certificates
+# 
+# For development, generate self-signed certificates:
+#   Linux/Mac: ./scripts/generate-ssl-cert.sh
+#   Windows: .\scripts\generate-ssl-cert.ps1
+#
+# For production, place your certificates here:
+#   - cert.pem (or path specified in SSL_CERT_PATH)
+#   - key.pem (or path specified in SSL_KEY_PATH)
+#   - ca.pem (optional, path specified in SSL_CA_PATH)
+
