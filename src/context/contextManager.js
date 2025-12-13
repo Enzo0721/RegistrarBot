@@ -1,43 +1,39 @@
-/**
- * Conversation Context Manager (v2)
- *
- * Adds:
- * - Fixed-size message window
- *
- * NOTE:
- * This implementation is intentionally naive.
- * Token awareness and smarter truncation
- * will be added in a later iteration.
- */
+import { estimateMessageTokens } from './tokenEstimator.js';
 
 const DEFAULT_MAX_MESSAGES = 20;
+const DEFAULT_MAX_TOKENS = 2048;
 
 export class ContextManager {
-    constructor(initialHistory = [], maxMessages = DEFAULT_MAX_MESSAGES) {
+    constructor(
+        initialHistory = [],
+        maxMessages = DEFAULT_MAX_MESSAGES,
+        maxTokens = DEFAULT_MAX_TOKENS
+    ) {
         this.maxMessages = maxMessages;
+        this.maxTokens = maxTokens;
         this.history = Array.isArray(initialHistory)
             ? [...initialHistory]
             : [];
     }
 
-    /**
-     * Add a message to context
-     * Drops oldest messages if limit exceeded
-     */
     addMessage(role, content) {
-    if (!role || !content) return;
+        if (!role || !content) return;
 
-    this.history.push({ role, content });
+        this.history.push({ role, content });
 
-    if (this.history.length > this.maxMessages) {
+        this.enforceLimits();
+    }
+
+    enforceLimits() {
+        // Preserve system messages
         const systemMessages = this.history.filter(
             (m) => m.role === 'system'
         );
-        const nonSystem = this.history.filter(
+        let nonSystem = this.history.filter(
             (m) => m.role !== 'system'
         );
 
-        // Keep system messages, trim oldest non-system messages
+        // Enforce message count
         while (
             systemMessages.length + nonSystem.length >
             this.maxMessages
@@ -45,28 +41,38 @@ export class ContextManager {
             nonSystem.shift();
         }
 
+        // Enforce token limit (naive)
+        let totalTokens = this.getEstimatedTokenCount([
+            ...systemMessages,
+            ...nonSystem,
+        ]);
+
+        while (totalTokens > this.maxTokens && nonSystem.length > 0) {
+            nonSystem.shift();
+            totalTokens = this.getEstimatedTokenCount([
+                ...systemMessages,
+                ...nonSystem,
+            ]);
+        }
+
         this.history = [...systemMessages, ...nonSystem];
     }
+
+    getEstimatedTokenCount(messages = this.history) {
+        return messages.reduce(
+            (sum, msg) => sum + estimateMessageTokens(msg),
+            0
+        );
     }
 
-
-    /**
-     * Return conversation history
-     */
     getHistory() {
         return [...this.history];
     }
 
-    /**
-     * Clear context
-     */
     clear() {
         this.history = [];
     }
 
-    /**
-     * Get current context size
-     */
     size() {
         return this.history.length;
     }
