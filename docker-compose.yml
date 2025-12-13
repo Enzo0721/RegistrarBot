@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     restart: always
     environment:
-      - POSTGRES_USER=myuser
-      - POSTGRES_PASSWORD=mypassword
-      - POSTGRES_DB=registrarbot_db
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: registrarbot_db
     ports:
       - "5432:5432"
     volumes:
@@ -26,9 +26,9 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://myuser:mypassword@db:5432/registrarbot_db
+      DATABASE_URL: postgresql://myuser:mypassword@db:5432/registrarbot_db
     ports:
-      - "3000:5000"
+      - "${SERVER_PORT}:3000"
     depends_on:
       db:
         condition: service_healthy
