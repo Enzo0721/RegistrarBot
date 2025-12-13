@@ -1,0 +1,15 @@
+Bootstrap: docker
+From: node:20-alpine
+
+%labels
+    Author RegistrarBot Team
+    Version v0.1
+    Description "RegistrarBot Enroot image (WIP)"
+
+%environment
+    export NODE_ENV=production
+    export SERVER_PORT=3000
+
+%post
+    echo "Initializing RegistrarBot Enroot container"
+    apk add --no-cache nodejs npm
