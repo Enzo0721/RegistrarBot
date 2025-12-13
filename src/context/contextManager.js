@@ -1,3 +1,4 @@
+import config from '#config';
 import { estimateMessageTokens } from './tokenEstimator.js';
 
 const DEFAULT_MAX_MESSAGES = 20;
@@ -35,25 +36,32 @@ export class ContextManager {
 
         // Enforce message count
         while (
-            systemMessages.length + nonSystem.length >
-            this.maxMessages
-        ) {
-            nonSystem.shift();
-        }
+	    systemMessages.length + nonSystem.length >
+	    this.maxMessages
+	) {
+    	config.warn(
+        	'@@force',
+        	'ContextManager: dropping message due to maxMessages limit'
+    	);
+    	nonSystem.shift();
+	}
 
         // Enforce token limit (naive)
         let totalTokens = this.getEstimatedTokenCount([
             ...systemMessages,
             ...nonSystem,
         ]);
-
-        while (totalTokens > this.maxTokens && nonSystem.length > 0) {
-            nonSystem.shift();
-            totalTokens = this.getEstimatedTokenCount([
-                ...systemMessages,
-                ...nonSystem,
-            ]);
-        }
+	while (totalTokens > this.maxTokens && nonSystem.length > 0) {
+	    config.warn(
+	        '@@force',
+	        'ContextManager: dropping message due to token limit'
+	    );
+	    nonSystem.shift();
+	    totalTokens = this.getEstimatedTokenCount([
+	        ...systemMessages,
+	        ...nonSystem,
+	    ]);
+	}
 
         this.history = [...systemMessages, ...nonSystem];
     }
