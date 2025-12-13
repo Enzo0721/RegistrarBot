@@ -1,6 +1,7 @@
 import config from '#config';
 import { ContextManager } from '../context/contextManager.js';
 import { LLM_CONFIG, getLLMEndpoint } from './llmConfig.js';
+import { increment } from '../metrics/registry.js';
 
 /**
  * LLM Interface
@@ -8,11 +9,7 @@ import { LLM_CONFIG, getLLMEndpoint } from './llmConfig.js';
  * Responsibilities:
  * - Maintain conversation context
  * - Send messages to LLM backend
- * - Append user + assistant messages to context
- *
- * NOTE:
- * This is a v1 implementation.
- * Token limits, truncation, and retries are added later.
+ * - Track LLM metrics
  */
 export class LLM {
     constructor(initialHistory = null, userId = null) {
@@ -34,10 +31,13 @@ export class LLM {
      * Send a message to the LLM
      *
      * @param {string} content
-     * @param {string} role - usually "user"
-     * @param {boolean} save - whether to persist context (future use)
+     * @param {string} role
+     * @param {boolean} save
      */
     async chat(content, role = 'user', save = false) {
+        // Track LLM request
+        increment('llm_requests_total');
+
         // Add user message to context
         this.context.addMessage(role, content);
 
@@ -52,11 +52,13 @@ export class LLM {
                 }),
             });
         } catch (error) {
+            increment('llm_failures_total');
             config.error('LLM connection failed:', error);
             throw new Error('Failed to connect to LLM backend');
         }
 
         if (!response.ok) {
+            increment('llm_failures_total');
             const text = await response.text().catch(() => '');
             config.error('LLM error response:', text);
             throw new Error('LLM backend returned an error');
@@ -81,11 +83,12 @@ export class LLM {
                             assistantMessage += data.message.content;
                         }
                     } catch {
-                        // Ignore partial JSON chunks
+                        // Ignore partial JSON fragments
                     }
                 }
             }
         } catch (error) {
+            increment('llm_failures_total');
             config.error('Error reading LLM stream:', error);
             throw new Error('Failed while reading LLM response');
         }
