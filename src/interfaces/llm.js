@@ -1,108 +1,103 @@
 import config from '#config';
-import { saveMessage } from '../db/chatHistory.js';
+import { ContextManager } from '../context/contextManager.js';
+import { LLM_CONFIG, getLLMEndpoint } from './llmConfig.js';
 
-const PROMPT = 'You are a support assistant for a university registrar.';
+/**
+ * LLM Interface
+ *
+ * Responsibilities:
+ * - Maintain conversation context
+ * - Send messages to LLM backend
+ * - Append user + assistant messages to context
+ *
+ * NOTE:
+ * This is a v1 implementation.
+ * Token limits, truncation, and retries are added later.
+ */
+export class LLM {
+    constructor(initialHistory = null, userId = null) {
+        this.userId = userId;
 
-class LLM {
-	constructor(history = null, userId = null) {
-		this.userId = userId; // User ID for saving to database
-		if (history === null || history.length === 0) {
-			// New conversation - start with system prompt
-			this.history = [{
-				role: 'system',
-				content: PROMPT
-			}];
-			// Save system prompt if userId is provided (only for new conversations)
-			if (userId) {
-				this.saveMessageToDb('system', PROMPT).catch(err => {
-					config.error('Failed to save system message:', err);
-				});
-			}
-		} else {
-			// Load existing history - ensure system prompt is first
-			this.history = [...history];
-			const hasSystemPrompt = this.history.some(msg => msg.role === 'system');
-			if (!hasSystemPrompt) {
-				// Add system prompt at the beginning if it's missing
-				this.history.unshift({
-					role: 'system',
-					content: PROMPT
-				});
-				// Save it to database if userId is provided
-				if (userId) {
-					this.saveMessageToDb('system', PROMPT).catch(err => {
-						config.error('Failed to save system message:', err);
-					});
-				}
-			}
-		}
-	}
+        // Initialize context manager
+        this.context = new ContextManager(initialHistory || []);
 
-	getHistory() {
-		return this.history;
-	}
+        // Ensure system prompt exists
+        if (!initialHistory || initialHistory.length === 0) {
+            this.context.addMessage(
+                'system',
+                'You are a helpful registrar assistant for RPI students.'
+            );
+        }
+    }
 
-	/**
-	 * Save a message to the database (non-blocking)
-	 * This appends the message to the user's chat history
-	 */
-	async saveMessageToDb(role, content) {
-		if (!this.userId) return;
-		
-		try {
-			await saveMessage(this.userId, role, content);
-			config.log(`Saved ${role} message to database for user ${this.userId} (length: ${content.length} chars)`);
-		} catch (error) {
-			config.error('Error saving message to database:', error);
-			// Don't throw - we don't want to break the chat flow if DB save fails
-		}
-	}
+    /**
+     * Send a message to the LLM
+     *
+     * @param {string} content
+     * @param {string} role - usually "user"
+     * @param {boolean} save - whether to persist context (future use)
+     */
+    async chat(content, role = 'user', save = false) {
+        // Add user message to context
+        this.context.addMessage(role, content);
 
-	async chat(message, role, llm = false)  {
-		// Add user message to history
-		this.history.push({
-			role,
-			content: message
-		});
+        let response;
+        try {
+            response = await fetch(`${getLLMEndpoint()}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: LLM_CONFIG.model,
+                    messages: this.context.getHistory(),
+                }),
+            });
+        } catch (error) {
+            config.error('LLM connection failed:', error);
+            throw new Error('Failed to connect to LLM backend');
+        }
 
-		// Save user message to database
-		if (this.userId) {
-			this.saveMessageToDb(role, message).catch(err => {
-				config.error('Failed to save user message:', err);
-			});
-		}
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            config.error('LLM error response:', text);
+            throw new Error('LLM backend returned an error');
+        }
 
-		if (llm && role === 'user') {
-			const llmPort = config.ENV.LLM_PORT || '11434';
-			const llmModel = config.ENV.LLM_MODEL || 'qwen3';
-			const response = await fetch(`http://localhost:${llmPort}/api/chat`, {
-				method: 'POST',
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					model: llmModel,
-					messages: this.history,
-					stream: false
-				})
-			});
-			if (!response.ok) {
-				config.error('LLM experienced fetch error');
-				throw new Error('LLM experienced fetch request error');
-			} else {
-				const json = await response.json();
-				const assistantMessage = json.message;
-				this.history.push(assistantMessage);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let assistantMessage = '';
 
-				// Save assistant response to database
-				if (this.userId && assistantMessage.content) {
-					this.saveMessageToDb('assistant', assistantMessage.content).catch(err => {
-						config.error('Failed to save assistant message:', err);
-					});
-				}
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-				return json;
-			}
-		}
-	}
+                const chunk = decoder.decode(value, { stream: true });
+                for (const line of chunk.split('\n')) {
+                    if (!line.trim()) continue;
+
+                    try {
+                        const data = JSON.parse(line);
+                        if (data.message?.content) {
+                            assistantMessage += data.message.content;
+                        }
+                    } catch {
+                        // Ignore partial JSON chunks
+                    }
+                }
+            }
+        } catch (error) {
+            config.error('Error reading LLM stream:', error);
+            throw new Error('Failed while reading LLM response');
+        }
+
+        // Add assistant response to context
+        this.context.addMessage('assistant', assistantMessage);
+
+        return {
+            role: 'assistant',
+            message: {
+                content: assistantMessage,
+            },
+        };
+    }
 }
-
-export { LLM };
