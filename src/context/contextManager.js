@@ -1,18 +1,20 @@
 /**
- * Conversation Context Manager (v1)
+ * Conversation Context Manager (v2)
  *
- * Responsibilities:
- * - Store ordered conversation messages
- * - Append messages with role + content
- * - Expose history in LLM-compatible format
+ * Adds:
+ * - Fixed-size message window
  *
  * NOTE:
- * This version intentionally does NOT perform
- * truncation or token counting yet.
+ * This implementation is intentionally naive.
+ * Token awareness and smarter truncation
+ * will be added in a later iteration.
  */
 
+const DEFAULT_MAX_MESSAGES = 20;
+
 export class ContextManager {
-    constructor(initialHistory = []) {
+    constructor(initialHistory = [], maxMessages = DEFAULT_MAX_MESSAGES) {
+        this.maxMessages = maxMessages;
         this.history = Array.isArray(initialHistory)
             ? [...initialHistory]
             : [];
@@ -20,30 +22,37 @@ export class ContextManager {
 
     /**
      * Add a message to context
-     * @param {string} role - system | user | assistant
-     * @param {string} content
+     * Drops oldest messages if limit exceeded
      */
     addMessage(role, content) {
         if (!role || !content) return;
 
-        this.history.push({
-            role,
-            content,
-        });
+        this.history.push({ role, content });
+
+        // Naive truncation: drop oldest messages
+        if (this.history.length > this.maxMessages) {
+            this.history.shift();
+        }
     }
 
     /**
-     * Get full conversation history
-     * (LLM-compatible format)
+     * Return conversation history
      */
     getHistory() {
         return [...this.history];
     }
 
     /**
-     * Reset conversation context
+     * Clear context
      */
     clear() {
         this.history = [];
+    }
+
+    /**
+     * Get current context size
+     */
+    size() {
+        return this.history.length;
     }
 }
