@@ -25,15 +25,30 @@ export class ContextManager {
      * Drops oldest messages if limit exceeded
      */
     addMessage(role, content) {
-        if (!role || !content) return;
+    if (!role || !content) return;
 
-        this.history.push({ role, content });
+    this.history.push({ role, content });
 
-        // Naive truncation: drop oldest messages
-        if (this.history.length > this.maxMessages) {
-            this.history.shift();
+    if (this.history.length > this.maxMessages) {
+        const systemMessages = this.history.filter(
+            (m) => m.role === 'system'
+        );
+        const nonSystem = this.history.filter(
+            (m) => m.role !== 'system'
+        );
+
+        // Keep system messages, trim oldest non-system messages
+        while (
+            systemMessages.length + nonSystem.length >
+            this.maxMessages
+        ) {
+            nonSystem.shift();
         }
+
+        this.history = [...systemMessages, ...nonSystem];
     }
+    }
+
 
     /**
      * Return conversation history
